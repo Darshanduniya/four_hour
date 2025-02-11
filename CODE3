@@ -1,0 +1,16 @@
+WITH latest_dag_runs AS (
+    SELECT dag_id, MAX(execution_date) AS latest_execution
+    FROM dag_run
+    WHERE dag_id IN ('AUS', 'IND', 'WI')  -- Only include specific DAGs
+    GROUP BY dag_id
+)
+SELECT dr.dag_id, 
+       dr.execution_date, 
+       MAX(ti.end_date) - MIN(ti.start_date) AS duration
+FROM task_instance ti
+JOIN dag_run dr ON ti.dag_id = dr.dag_id AND ti.run_id = dr.run_id
+JOIN latest_dag_runs ldr ON dr.dag_id = ldr.dag_id AND dr.execution_date = ldr.latest_execution
+WHERE ti.task_id IN ('task1', 'task2', 'task3', 'task4')
+AND ti.state = 'success'
+GROUP BY dr.dag_id, dr.execution_date
+HAVING MAX(ti.end_date) - MIN(ti.start_date) <= INTERVAL '4 hours';
