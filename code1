@@ -1,0 +1,7 @@
+SELECT dag_id, MAX(execution_date) AS latest_execution, 
+       MAX(end_date) - MIN(start_date) AS duration
+FROM task_instance
+WHERE task_id IN ('task1', 'task2', 'task3', 'task4')
+AND state = 'success'
+GROUP BY dag_id, execution_date
+HAVING MAX(end_date) - MIN(start_date) <= INTERVAL '4 hours';
