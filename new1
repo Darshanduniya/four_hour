@@ -1,0 +1,14 @@
+SELECT 
+    ti.dag_id,
+    ti.task_id,
+    ti.duration,
+    ti.execution_date
+FROM task_instance ti
+WHERE ti.dag_id IN ('AUS', 'IND')
+AND ti.task_id IN ('task1', 'task2', 'task3', 'task4')
+AND ti.execution_date = (
+    SELECT MAX(execution_date) 
+    FROM dag_run 
+    WHERE dag_run.dag_id = ti.dag_id
+)
+ORDER BY ti.dag_id, ti.task_id;
