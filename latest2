@@ -1,0 +1,20 @@
+WITH latest_dag_run AS (
+    SELECT dag_id, 
+           MAX(execution_date) AS latest_execution_date
+    FROM dag_run
+    WHERE state = 'success'
+    GROUP BY dag_id
+)
+SELECT ti.dag_id, 
+       ti.task_id, 
+       ti.duration, 
+       dr.execution_date
+FROM task_instance ti
+JOIN dag_run dr 
+    ON ti.dag_id = dr.dag_id 
+    AND dr.execution_date = (SELECT latest_execution_date 
+                             FROM latest_dag_run ldr 
+                             WHERE ldr.dag_id = ti.dag_id)
+WHERE ti.state = 'success'
+AND ti.dag_id NOT IN ('aus', 'ind')  -- Exclude specific DAGs
+ORDER BY ti.dag_id, ti.task_id;
