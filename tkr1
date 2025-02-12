@@ -1,0 +1,16 @@
+SELECT dag_id, run_id, 
+       MIN(start_date) AS min_start_date, 
+       MAX(end_date) AS max_end_date, 
+       ROUND(EXTRACT(EPOCH FROM (MAX(end_date) - MIN(start_date))) / 3600, 2) AS duration_hours
+FROM task_instance
+WHERE dag_id IN ('US_TEC_ABC', 'US_TEC_XYZ', 'US_TEC_123')  -- Mention multiple DAGs here
+AND task_id IN ('task1', 'task2', 'task3', 'task4')
+AND run_id IN (
+    SELECT run_id 
+    FROM dag_run 
+    WHERE dag_id IN ('US_TEC_ABC', 'US_TEC_XYZ', 'US_TEC_123')  
+    ORDER BY execution_date DESC
+    LIMIT 1
+)
+GROUP BY dag_id, run_id
+HAVING ROUND(EXTRACT(EPOCH FROM (MAX(end_date) - MIN(start_date))) / 3600, 2) < 4;
