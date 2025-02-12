@@ -1,0 +1,11 @@
+SELECT 
+    dag_id, 
+    task_id, 
+    execution_date, 
+    start_date, 
+    end_date, 
+    EXTRACT(EPOCH FROM (end_date - start_date)) AS duration_seconds
+FROM task_instance
+WHERE dag_id = 'AUS'
+AND task_id IN ('task1', 'task2', 'task3', 'task4')
+ORDER BY execution_date DESC;
