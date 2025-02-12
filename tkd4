@@ -1,0 +1,12 @@
+SELECT ti.dag_id, ti.task_id, ti.run_id, ti.start_date, ti.end_date
+FROM task_instance ti
+JOIN (
+    SELECT dag_id, run_id
+    FROM dag_run
+    WHERE dag_id LIKE 'US_TEC%'  -- Filter DAGs with names starting with 'US_TEC'
+    ORDER BY execution_date DESC
+    LIMIT 1
+) latest_dag_run 
+ON ti.dag_id = latest_dag_run.dag_id 
+AND ti.run_id = latest_dag_run.run_id
+WHERE ti.task_id IN ('task1', 'task2', 'task3', 'task4');
