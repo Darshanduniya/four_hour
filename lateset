@@ -1,0 +1,17 @@
+WITH latest_dag_run AS (
+    SELECT dag_id, 
+           MAX(execution_date) AS latest_execution_date
+    FROM dag_run
+    WHERE state = 'success'
+    GROUP BY dag_id
+)
+SELECT ti.dag_id, 
+       ti.task_id, 
+       ti.duration, 
+       ti.execution_date
+FROM task_instance ti
+JOIN latest_dag_run ldr 
+    ON ti.dag_id = ldr.dag_id 
+    AND ti.execution_date = ldr.latest_execution_date
+WHERE ti.state = 'success'
+ORDER BY ti.dag_id, ti.task_id;
