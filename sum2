@@ -1,0 +1,9 @@
+SELECT dr.run_id, 
+       SUM(ti.duration) AS total_task_duration
+FROM task_instance ti
+JOIN dag_run dr ON ti.dag_id = dr.dag_id 
+               AND ti.run_id = dr.run_id
+WHERE dr.execution_date = (SELECT MAX(execution_date) FROM dag_run)
+GROUP BY dr.run_id
+ORDER BY dr.execution_date DESC
+LIMIT 1;
