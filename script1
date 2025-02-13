@@ -1,0 +1,66 @@
+import psycopg2
+import csv
+
+# Database connection details
+DB_CONFIG = {
+    "dbname": "airflow_db",
+    "user": "your_username",
+    "password": "your_password",
+    "host": "localhost",
+    "port": "5432"
+}
+
+dag_ids = ['US_AUN', 'US_IND']
+
+def fetch_latest_run_id(cursor, dag_id):
+    query = f"""
+        SELECT run_id FROM dag_run 
+        WHERE dag_id = %s 
+        ORDER BY execution_date DESC 
+        LIMIT 1;
+    """
+    cursor.execute(query, (dag_id,))
+    result = cursor.fetchone()
+    return result[0] if result else None
+
+def fetch_duration(cursor, run_id):
+    query = f"""
+        SELECT dag_id, SUM(duration)/3600 AS duration_hr 
+        FROM task_instance 
+        WHERE run_id = %s 
+        GROUP BY dag_id;
+    """
+    cursor.execute(query, (run_id,))
+    return cursor.fetchall()
+
+def main():
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+        
+        results = []
+        
+        for dag_id in dag_ids:
+            run_id = fetch_latest_run_id(cursor, dag_id)
+            if run_id:
+                durations = fetch_duration(cursor, run_id)
+                for row in durations:
+                    results.append(row)
+        
+        # Write results to CSV
+        with open("dag_durations.csv", "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["dag_id", "duration_hr"])
+            writer.writerows(results)
+        
+        print("CSV file 'dag_durations.csv' has been created successfully.")
+        
+    except Exception as e:
+        print("Error:", e)
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
+
+if __name__ == "__main__":
+    main()
